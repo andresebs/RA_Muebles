@@ -3,99 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>AR Furniture Pro: Precision Control</title>
+    <title>AR Furniture: Cupboard Test</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
     <style>
-        /* --- GLOBAL STYLES --- */
+        /* --- UI STYLES (Clean Code & Mobile Optimized) --- */
         * { box-sizing: border-box; }
         body { margin: 0; overflow: hidden; font-family: sans-serif; }
-
-        /* --- UI OVERLAY LAYER --- */
-        #ui-layer {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 100;
-            pointer-events: none; /* Let touches pass to 3D scene */
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 10px;
-            padding-bottom: env(safe-area-inset-bottom);
-        }
-
-        /* Top Bar */
-        .top-bar {
-            pointer-events: auto;
-            background: rgba(0,0,0,0.6);
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        .furniture-select {
-            width: 100%; padding: 8px; font-size: 16px; border-radius: 5px;
-        }
-
-        /* Control Panel (Bottom) */
-        .control-panel {
-            pointer-events: auto;
-            background: rgba(20, 20, 20, 0.9);
-            padding: 15px;
-            border-radius: 15px 15px 0 0;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            color: white;
-        }
-
-        /* Button Grids */
-        .grid-row {
-            display: flex; justify-content: space-between; gap: 10px;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid #555;
-            background: #333;
-            color: white;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .btn:active { background: #666; }
         
-        /* Active States */
+        #ui-layer {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 100; pointer-events: none;
+            display: flex; flex-direction: column; justify-content: space-between;
+            padding: 10px; padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        .top-bar { pointer-events: auto; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 10px; text-align: center; }
+        .furniture-select { width: 100%; padding: 8px; font-size: 16px; border-radius: 5px; }
+        
+        .control-panel {
+            pointer-events: auto; background: rgba(20, 20, 20, 0.9); padding: 15px;
+            border-radius: 15px 15px 0 0; display: flex; flex-direction: column; gap: 10px; color: white;
+        }
+        
+        .grid-row { display: flex; justify-content: space-between; gap: 10px; }
+        
+        .btn {
+            flex: 1; padding: 12px; border: 1px solid #555; background: #333; color: white;
+            border-radius: 8px; font-weight: bold; cursor: pointer; user-select: none;
+        }
+        .btn:active { background: #666; }
         .btn.active-mode { background: #007bff; border-color: #0056b3; }
         .btn.active-axis { background: #ffc107; color: black; border-color: #d39e00; }
         .btn-action { background: #28a745; font-size: 20px; }
-        .btn-lock { background: #dc3545; } /* Red for Lock/Reset */
-
-        /* Labels inside control panel */
+        .btn-lock { background: #dc3545; }
         .panel-label { font-size: 12px; color: #aaa; margin-bottom: 2px; text-transform: uppercase; }
-
     </style>
 </head>
 <body>
 
     <div id="ui-layer">
-        
         <div class="top-bar">
             <select id="furniture-select" class="furniture-select">
-                <option value="chair">Chair (Default: 0.5x1.0x0.5)</option>
-                <option value="table">Table (Default: 1.2x0.8x0.8)</option>
-                <option value="bed">Bed (Default: 1.5x0.6x2.0)</option>
-                <option value="wardrobe">Wardrobe (Default: 1.0x2.0x0.6)</option>
+                <option value="wardrobe">Armario (cupboard.glb)</option>
+                <option value="chair">Chair (Shape Only)</option>
+                <option value="table">Table (Shape Only)</option>
+                <option value="bed">Bed (Shape Only)</option>
             </select>
         </div>
 
         <div class="control-panel">
-            
             <div class="grid-row">
                 <div style="flex:1">
                     <div class="panel-label">Mode</div>
@@ -113,31 +72,34 @@
                     </div>
                 </div>
             </div>
-
             <div class="grid-row">
                 <button class="btn btn-action" onclick="adjustValue(-1)">➖</button>
                 <button class="btn btn-action" onclick="adjustValue(1)">➕</button>
             </div>
-
             <button class="btn btn-lock" id="btn-lock-toggle" onclick="toggleLockSystem()">🔒 Lock / Place Furniture</button>
         </div>
     </div>
 
     <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false;' vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
         
+        <a-assets>
+            <a-asset-item id="model-cupboard" src="cupboard.glb"></a-asset-item>
+        </a-assets>
+
         <a-marker preset="hiro" id="marker-root">
-            <a-entity id="ghost-model">
-                <a-box id="ghost-box" color="yellow" material="opacity: 0.5; transparent: true"></a-box>
+            <a-entity id="ghost-container" scale="1 1 1">
+                <a-box id="ghost-box" material="opacity: 0.3; color: yellow; transparent: true"></a-box>
             </a-entity>
         </a-marker>
 
         <a-entity id="world-container" visible="false">
-            <a-entity id="active-furniture">
-                <a-box id="furniture-box" color="#007bff"></a-box>
+            <a-entity id="active-furniture-wrapper">
                 
-                <a-text id="label-x" value="X: 1.0m" color="red" align="center" scale="0.5 0.5 0.5" position="0 0 0"></a-text>
-                <a-text id="label-y" value="Y: 1.0m" color="green" align="center" scale="0.5 0.5 0.5" position="0 0 0"></a-text>
-                <a-text id="label-z" value="Z: 1.0m" color="blue" align="center" scale="0.5 0.5 0.5" position="0 0 0"></a-text>
+                <a-entity id="furniture-model-entity"></a-entity>
+
+                <a-text id="label-x" value="W" color="red" align="center" scale="0.5 0.5 0.5"></a-text>
+                <a-text id="label-y" value="H" color="green" align="center" scale="0.5 0.5 0.5"></a-text>
+                <a-text id="label-z" value="D" color="blue" align="center" scale="0.5 0.5 0.5"></a-text>
             </a-entity>
         </a-entity>
 
@@ -145,193 +107,219 @@
     </a-scene>
 
     <script>
-        // --- CONFIGURATION ---
+        // --- DATABASE ---
         const furnitureDB = {
-            chair: { w: 0.5, h: 1.0, d: 0.5 },
-            table: { w: 1.2, h: 0.8, d: 0.8 },
-            bed:   { w: 1.5, h: 0.6, d: 2.0 },
-            wardrobe: { w: 1.0, h: 2.0, d: 0.6 }
+            wardrobe: { 
+                // Dimensions in meters (approximate for collider/ghost)
+                w: 1.0, h: 2.0, d: 0.6, 
+                // ENABLE MODEL FOR WARDROBE
+                useModel: true, 
+                modelId: '#model-cupboard',
+                // Adjust this if the GLB is too big/small (e.g. 0.01 if in cm, 1 if in meters)
+                scaleCorrection: 1 
+            },
+            chair: { 
+                w: 0.5, h: 1.0, d: 0.5, 
+                useModel: false, // Shape only
+                color: '#FF5733' 
+            },
+            table: { 
+                w: 1.5, h: 0.8, d: 0.9, 
+                useModel: false, // Shape only
+                color: '#8B4513' 
+            },
+            bed: { 
+                w: 1.6, h: 0.6, d: 2.0, 
+                useModel: false, // Shape only
+                color: '#3357FF' 
+            }
         };
 
-        // State Variables
-        let currentMode = 'scale'; // 'scale' or 'rotate'
-        let currentAxis = 'x';     // 'x', 'y', 'z'
+        // --- STATE & VARS ---
+        let currentType = 'wardrobe'; // Default to wardrobe for testing
+        let currentMode = 'scale';
+        let currentAxis = 'x';
         let isLocked = false;
-        let baseDimensions = { ...furnitureDB.chair }; // Copy of default dimensions
-
-        // DOM Elements
-        const furnitureBox = document.getElementById('furniture-box');
-        const worldContainer = document.getElementById('world-container');
-        const activeFurniture = document.getElementById('active-furniture');
-        const ghostModel = document.getElementById('ghost-model');
-        const ghostBox = document.getElementById('ghost-box');
-        const markerRoot = document.getElementById('marker-root');
         
-        // Labels
+        // DOM Elements
+        const worldContainer = document.getElementById('world-container');
+        const activeWrapper = document.getElementById('active-furniture-wrapper');
+        const furnitureEntity = document.getElementById('furniture-model-entity');
+        const markerRoot = document.getElementById('marker-root');
+        const ghostContainer = document.getElementById('ghost-container');
+        const ghostBox = document.getElementById('ghost-box');
+
         const lblX = document.getElementById('label-x');
         const lblY = document.getElementById('label-y');
         const lblZ = document.getElementById('label-z');
 
-        // --- INITIALIZATION ---
         function init() {
-            updateGhost('chair');
+            updateGhostVisuals();
         }
 
-        // --- UI FUNCTIONS ---
-        
+        // --- SELECTION SYSTEM ---
+        document.getElementById('furniture-select').addEventListener('change', (e) => {
+            currentType = e.target.value;
+            if(isLocked) renderFurnitureModel();
+            updateGhostVisuals();
+        });
+
         function setMode(mode) {
             currentMode = mode;
-            // Update UI Styling
-            document.querySelectorAll('[id^="mode-"]').forEach(b => b.classList.remove('active-mode'));
-            document.getElementById(`mode-${mode}`).classList.add('active-mode');
+            updateUI();
         }
 
         function setAxis(axis) {
             currentAxis = axis;
-            // Update UI Styling
-            document.querySelectorAll('[id^="axis-"]').forEach(b => b.classList.remove('active-axis'));
-            document.getElementById(`axis-${axis}`).classList.add('active-axis');
+            updateUI();
         }
 
-        document.getElementById('furniture-select').addEventListener('change', (e) => {
-            baseDimensions = { ...furnitureDB[e.target.value] };
-            updateGhost(e.target.value);
+        function updateUI() {
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active-mode', 'active-axis'));
+            document.getElementById(`mode-${currentMode}`).classList.add('active-mode');
+            document.getElementById(`axis-${currentAxis}`).classList.add('active-axis');
+        }
+
+        // --- RENDER LOGIC ---
+
+        function updateGhostVisuals() {
+            const data = furnitureDB[currentType];
+            ghostBox.setAttribute('width', data.w);
+            ghostBox.setAttribute('height', data.h);
+            ghostBox.setAttribute('depth', data.d);
+            ghostBox.setAttribute('position', `0 ${data.h/2} 0`);
+        }
+
+        function renderFurnitureModel() {
+            const data = furnitureDB[currentType];
             
-            // If locked, reset the shape of the placed object too
-            if(isLocked) {
-                updateFurnitureShape();
+            // Clear previous model
+            furnitureEntity.innerHTML = '';
+            furnitureEntity.removeAttribute('gltf-model');
+
+            if (data.useModel) {
+                // LOAD GLB MODEL
+                furnitureEntity.setAttribute('gltf-model', data.modelId);
+                
+                // Scale Correction & Centering
+                const s = data.scaleCorrection || 1;
+                furnitureEntity.setAttribute('scale', `${s} ${s} ${s}`);
+                furnitureEntity.setAttribute('position', '0 0 0');
+
+            } else {
+                // LOAD PLACEHOLDER BOX
+                const box = document.createElement('a-box');
+                box.setAttribute('width', data.w);
+                box.setAttribute('height', data.h);
+                box.setAttribute('depth', data.d);
+                box.setAttribute('color', data.color || 'white');
+                box.setAttribute('position', `0 ${data.h/2} 0`);
+                furnitureEntity.appendChild(box);
             }
-        });
 
-        // --- LOGIC FUNCTIONS ---
-
-        // 1. Ghost Logic (Preview)
-        function updateGhost(type) {
-            const dims = furnitureDB[type];
-            ghostBox.setAttribute('width', dims.w);
-            ghostBox.setAttribute('height', dims.h);
-            ghostBox.setAttribute('depth', dims.d);
-            ghostBox.setAttribute('position', `0 ${dims.h/2} 0`);
+            updateLabels();
         }
 
-        // 2. Lock / Unlock System
+        // --- LOCK SYSTEM ---
+
         function toggleLockSystem() {
             const btn = document.getElementById('btn-lock-toggle');
             
             if (!isLocked) {
-                // LOCK ACTION
+                // LOCK
                 if (!markerRoot.object3D.visible) {
-                    alert("Marker not found! Please look at the Hiro image.");
+                    alert("Marker not found! Point camera at Hiro image.");
                     return;
                 }
 
-                // Copy positions from Ghost to World
+                // Copy Transform
                 const ghostPos = new THREE.Vector3();
                 const ghostQuat = new THREE.Quaternion();
-                ghostModel.object3D.getWorldPosition(ghostPos);
-                ghostModel.object3D.getWorldQuaternion(ghostQuat);
+                ghostContainer.object3D.getWorldPosition(ghostPos);
+                ghostContainer.object3D.getWorldQuaternion(ghostQuat);
 
                 worldContainer.object3D.position.copy(ghostPos);
                 worldContainer.object3D.quaternion.copy(ghostQuat);
-
-                updateFurnitureShape(); // Apply dimensions
+                
+                renderFurnitureModel();
                 
                 worldContainer.setAttribute('visible', true);
-                ghostModel.setAttribute('visible', false);
+                markerRoot.setAttribute('visible', false); 
                 
                 isLocked = true;
                 btn.innerText = "🔓 Unlock / Reset";
-                btn.style.background = "#6c757d"; // Grey
+                btn.style.background = "#6c757d";
 
             } else {
-                // UNLOCK ACTION (Reset)
+                // UNLOCK
                 isLocked = false;
                 worldContainer.setAttribute('visible', false);
-                ghostModel.setAttribute('visible', true);
+                markerRoot.setAttribute('visible', true);
                 
                 // Reset Transforms
-                activeFurniture.setAttribute('scale', '1 1 1');
-                activeFurniture.setAttribute('rotation', '0 0 0');
+                activeWrapper.setAttribute('scale', '1 1 1');
+                activeWrapper.setAttribute('rotation', '0 0 0');
                 
                 btn.innerText = "🔒 Lock / Place Furniture";
-                btn.style.background = "#dc3545"; // Red
+                btn.style.background = "#dc3545";
             }
         }
 
-        // 3. Update Visual Shape & Labels
-        function updateFurnitureShape() {
-            // Apply Base Dimensions
-            furnitureBox.setAttribute('width', baseDimensions.w);
-            furnitureBox.setAttribute('height', baseDimensions.h);
-            furnitureBox.setAttribute('depth', baseDimensions.d);
-            furnitureBox.setAttribute('position', `0 ${baseDimensions.h/2} 0`);
-            
-            updateLabels();
-        }
+        // --- TRANSFORM SYSTEM ---
 
-        // 4. Transform Logic (Scale & Rotate)
         function adjustValue(direction) {
             if (!isLocked) {
-                alert("Please LOCK the furniture first to edit it.");
+                alert("Please LOCK first.");
                 return;
             }
 
-            const entity = activeFurniture; // We manipulate the container wrapper
-
             if (currentMode === 'scale') {
-                const currentScale = entity.getAttribute('scale');
-                const step = 0.1 * direction; // 10% change
+                const currentScale = activeWrapper.getAttribute('scale');
+                const step = 0.1 * direction;
+                let newVal = Math.max(0.1, currentScale[currentAxis] + step);
                 
-                // Calculate new scale (prevent negative)
-                let newScaleVal = currentScale[currentAxis] + step;
-                if (newScaleVal < 0.1) newScaleVal = 0.1;
+                let newScaleObj = { ...currentScale };
+                newScaleObj[currentAxis] = newVal;
+                
+                activeWrapper.setAttribute('scale', newScaleObj);
+                updateLabels();
 
-                // Create new object strictly for the attribute
-                let newScaleObj = { x: currentScale.x, y: currentScale.y, z: currentScale.z };
-                newScaleObj[currentAxis] = newScaleVal;
-
-                entity.setAttribute('scale', newScaleObj);
-                updateLabels(); // Update text measurements
-
-            } else if (currentMode === 'rotate') {
-                const currentRot = entity.getAttribute('rotation');
-                const step = 15 * direction; // 15 degrees
-
-                let newRotObj = { x: currentRot.x, y: currentRot.y, z: currentRot.z };
+            } else {
+                // Rotate
+                const currentRot = activeWrapper.getAttribute('rotation');
+                const step = 15 * direction;
+                let newRotObj = { ...currentRot };
                 newRotObj[currentAxis] += step;
-
-                entity.setAttribute('rotation', newRotObj);
-                // No need to update labels for rotation
+                activeWrapper.setAttribute('rotation', newRotObj);
             }
         }
 
-        // 5. Dynamic Labels Logic
         function updateLabels() {
-            const currentScale = activeFurniture.getAttribute('scale');
-            
-            // Calculate Real World Size = Base Size * Scale Factor
-            const realW = (baseDimensions.w * currentScale.x).toFixed(2);
-            const realH = (baseDimensions.h * currentScale.y).toFixed(2);
-            const realD = (baseDimensions.d * currentScale.z).toFixed(2);
+            const data = furnitureDB[currentType];
+            const currentScale = activeWrapper.getAttribute('scale');
 
-            // Update Text
-            lblX.setAttribute('value', `W: ${realW}m`);
-            lblY.setAttribute('value', `H: ${realH}m`);
-            lblZ.setAttribute('value', `D: ${realD}m`);
+            // Real Size = Base Size * Scale Factor
+            const rw = (data.w * currentScale.x).toFixed(2);
+            const rh = (data.h * currentScale.y).toFixed(2);
+            const rd = (data.d * currentScale.z).toFixed(2);
 
-            // Position Labels smartly around the object
-            // X Label: To the right
-            lblX.setAttribute('position', `${(baseDimensions.w/2) + 0.3} ${baseDimensions.h/2} 0`);
-            
-            // Y Label: On top
-            lblY.setAttribute('position', `0 ${baseDimensions.h + 0.3} 0`);
-            
-            // Z Label: To the front
-            lblZ.setAttribute('position', `0 ${baseDimensions.h/2} ${(baseDimensions.d/2) + 0.3}`);
+            lblX.setAttribute('value', `W: ${rw}m`);
+            lblY.setAttribute('value', `H: ${rh}m`);
+            lblZ.setAttribute('value', `D: ${rd}m`);
+
+            // Position Labels
+            const limitW = (data.w * currentScale.x) / 2;
+            const limitH = (data.h * currentScale.y);
+            const limitD = (data.d * currentScale.z) / 2;
+
+            lblX.setAttribute('position', `${limitW + 0.2} ${limitH/2} 0`);
+            lblY.setAttribute('position', `0 ${limitH + 0.2} 0`);
+            lblZ.setAttribute('position', `0 ${limitH/2} ${limitD + 0.2}`);
         }
 
-        // Run Init
+        // Init
         init();
+        updateUI();
 
     </script>
 </body>
