@@ -2,149 +2,179 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR Furniture Visualizer Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AR Furniture Visualizer Mobile</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
     <style>
-        /* UI Styling - Clean and Accessible */
+        /* GLOBAL RESETS */
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             overflow: hidden;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: black; /* Better loading experience */
         }
 
-        /* Top Control Bar */
-        .top-bar {
+        /* UI OVERLAY CONTAINER 
+           This creates a transparent layer on top of the camera.
+           It uses Flexbox to push the Top Bar up and Bottom Bar down.
+        */
+        #ui-layer {
             position: fixed;
-            top: 10px;
+            top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            /* Allow clicks to pass through to the AR scene behind */
+            pointer-events: none;
+            /* Respect Safe Areas on iPhone (Notch/Home Bar) */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* STATUS MESSAGE */
+        .status-message {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: yellow;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 10px;
+            /* Make text readable */
+            text-shadow: 1px 1px 2px black;
+        }
+
+        /* TOP CONTROLS */
+        .top-controls {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            /* Re-enable clicks for these elements */
+            pointer-events: auto;
+        }
+
+        .furniture-selector {
+            width: 90%;
+            max-width: 400px;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 2px solid #fff;
+            background-color: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        /* BOTTOM CONTROLS */
+        .bottom-controls {
             width: 100%;
             display: flex;
             justify-content: center;
             gap: 10px;
-            z-index: 20;
+            padding-bottom: 20px; /* Extra space for mobile nav bars */
+            flex-wrap: wrap; /* Allow wrapping on very small screens */
+            /* Re-enable clicks for buttons */
+            pointer-events: auto;
         }
 
-        .furniture-selector {
-            padding: 10px;
-            font-size: 16px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-
-        /* Bottom Action Bar */
-        .bottom-bar {
-            position: fixed;
-            bottom: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            z-index: 20;
-            flex-wrap: wrap;
-        }
-
-        .btn {
-            background-color: rgba(30, 30, 30, 0.9);
+        .action-button {
+            background-color: rgba(30, 30, 30, 0.85);
             color: white;
-            border: 1px solid white;
-            padding: 12px 20px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 12px 18px;
             border-radius: 25px;
             font-size: 14px;
             font-weight: 600;
-            cursor: pointer;
             text-transform: uppercase;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            /* Interaction improvements */
+            cursor: pointer;
             user-select: none;
-            transition: background 0.3s;
+            -webkit-tap-highlight-color: transparent;
+            min-width: 80px; /* Ensure clickable area */
+            text-align: center;
         }
 
-        .btn:active {
+        .action-button:active {
             background-color: #555;
+            transform: scale(0.95);
         }
 
         .btn-primary {
-            background-color: #007bff; /* Blue for primary action */
+            background-color: #007bff;
             border: none;
-        }
-
-        /* Status Indicator */
-        .status-message {
-            position: fixed;
-            top: 60px;
-            width: 100%;
-            text-align: center;
-            color: yellow;
-            font-weight: bold;
-            text-shadow: 1px 1px 2px black;
-            z-index: 10;
-            pointer-events: none;
         }
     </style>
 </head>
 <body>
 
-    <div class="top-bar">
-        <select id="furniture-select" class="furniture-selector">
-            <option value="chair">Chair (0.5m x 1.0m)</option>
-            <option value="table">Table (1.2m x 0.8m)</option>
-            <option value="bed">Bed (2.0m x 1.5m)</option>
-            <option value="wardrobe">Wardrobe (1.0m x 2.0m)</option>
-        </select>
-    </div>
-
-    <div id="status-text" class="status-message">Scan Hiro Marker to preview</div>
-
-    <div class="bottom-bar">
-        <button class="btn" id="btn-rotate">Rotate 45°</button>
-        <button class="btn btn-primary" id="btn-place">Lock / Place Here</button>
-        <button class="btn" id="btn-reset">Reset</button>
-    </div>
-
-    <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;' renderer="logarithmicDepthBuffer: true;">
+    <div id="ui-layer">
         
+        <div class="top-controls">
+            <select id="furniture-select" class="furniture-selector">
+                <option value="chair">Chair (0.5m x 1.0m)</option>
+                <option value="table">Table (1.2m x 0.8m)</option>
+                <option value="bed">Bed (2.0m x 1.5m)</option>
+                <option value="wardrobe">Wardrobe (1.0m x 2.0m)</option>
+            </select>
+            <div id="status-text" class="status-message">Scan Hiro Marker to Preview</div>
+        </div>
+
+        <div class="bottom-controls">
+            <div class="action-button" id="btn-rotate">Rotate</div>
+            <div class="action-button btn-primary" id="btn-place">Lock</div>
+            <div class="action-button" id="btn-reset">Reset</div>
+        </div>
+    </div>
+
+
+    <a-scene 
+        embedded 
+        arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;' 
+        vr-mode-ui="enabled: false" 
+        renderer="logarithmicDepthBuffer: true;">
+        
+        <a-assets>
+            </a-assets>
+
         <a-marker preset="hiro" id="cursor-marker" emitevents="true">
             <a-entity id="ghost-entity" position="0 0 0" scale="1 1 1" visible="true">
                 <a-box id="ghost-shape" material="opacity: 0.5; color: yellow; transparent: true"></a-box>
             </a-entity>
         </a-marker>
 
-        <a-entity id="placed-furniture-container" visible="false">
-             </a-entity>
+        <a-entity id="placed-furniture-container" visible="false"></a-entity>
 
         <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-        // --- CONFIGURATION & DATA ---
-        
-        // Database of furniture dimensions (in meters) and visual properties
-        // Penalty #3: Descriptive variable names
+        // --- DATA ---
         const furnitureDatabase = {
-            chair: { 
-                width: 0.5, height: 1.0, depth: 0.5, color: '#FF5733', 
-                label: "Chair" 
-            },
-            table: { 
-                width: 1.2, height: 0.8, depth: 0.8, color: '#33FF57', 
-                label: "Dining Table" 
-            },
-            bed: { 
-                width: 1.5, height: 0.6, depth: 2.0, color: '#3357FF', 
-                label: "Double Bed" 
-            },
-            wardrobe: { 
-                width: 1.0, height: 2.2, depth: 0.6, color: '#F333FF', 
-                label: "Wardrobe" 
-            }
+            chair: { width: 0.5, height: 1.0, depth: 0.5, color: '#FF5733', label: "Chair" },
+            table: { width: 1.2, height: 0.8, depth: 0.8, color: '#33FF57', label: "Table" },
+            bed: { width: 1.5, height: 0.6, depth: 2.0, color: '#3357FF', label: "Bed" },
+            wardrobe: { width: 1.0, height: 2.2, depth: 0.6, color: '#F333FF', label: "Wardrobe" }
         };
 
         let currentSelection = 'chair';
         let isFurniturePlaced = false;
 
-        // --- DOM ELEMENTS ---
+        // --- DOM REFERENCES ---
         const ghostShape = document.getElementById('ghost-shape');
         const ghostEntity = document.getElementById('ghost-entity');
         const markerElement = document.getElementById('cursor-marker');
@@ -152,119 +182,84 @@
         const selector = document.getElementById('furniture-select');
         const statusText = document.getElementById('status-text');
 
-        // --- FUNCTIONS ---
+        // --- CORE FUNCTIONS ---
 
-        /**
-         * Updates the visual shape of the "Ghost" (preview) based on selection.
-         */
         function updateGhostVisuals() {
             const data = furnitureDatabase[currentSelection];
-            
-            // Update geometry
+            if (!ghostShape) return; // Safety check
+
             ghostShape.setAttribute('width', data.width);
             ghostShape.setAttribute('height', data.height);
             ghostShape.setAttribute('depth', data.depth);
-            
-            // Center the object so it sits ON the floor, not halfway through it
-            // Y position = height / 2
             ghostShape.setAttribute('position', `0 ${data.height / 2} 0`);
         }
 
-        /**
-         * Creates the solid furniture with dimension labels in the World Scene.
-         * This separates the object from the marker logic.
-         */
-        function placeFurnitureInWorld() {
-            if (isFurniturePlaced) return;
-
-            // 1. Get the world position and rotation of the Ghost
-            // We use Three.js objects under the hood for precision
-            const ghostObject = ghostEntity.object3D;
-            const worldPosition = new THREE.Vector3();
-            const worldQuaternion = new THREE.Quaternion();
-
-            ghostObject.getWorldPosition(worldPosition);
-            ghostObject.getWorldQuaternion(worldQuaternion);
-
-            // 2. Clear previous placed items
-            placedContainer.innerHTML = '';
-
-            // 3. Create the new entity structure
-            const data = furnitureDatabase[currentSelection];
-            const wrapper = document.createElement('a-entity');
-            
-            // Create the main box (Furniture)
-            const box = document.createElement('a-box');
-            box.setAttribute('width', data.width);
-            box.setAttribute('height', data.height);
-            box.setAttribute('depth', data.depth);
-            box.setAttribute('color', data.color);
-            box.setAttribute('position', `0 ${data.height / 2} 0`); // Sit on floor
-            box.setAttribute('material', 'opacity: 1; shader: standard');
-
-            // 4. Create Dimension Labels (Text)
-            // Penalty #6: Modular logic for text creation
-            const textWidth = createDimensionText(`${data.width}m`, 0, data.height + 0.1, 0);
-            const textLabel = createDimensionText(data.label, 0, data.height + 0.3, 0, 'yellow', 2);
-
-            wrapper.appendChild(box);
-            wrapper.appendChild(textWidth);
-            wrapper.appendChild(textLabel);
-
-            // 5. Apply the transform captured from the marker
-            placedContainer.object3D.position.copy(worldPosition);
-            placedContainer.object3D.quaternion.copy(worldQuaternion);
-            
-            // 6. Append to scene and show
-            placedContainer.appendChild(wrapper);
-            placedContainer.setAttribute('visible', true);
-
-            // 7. Hide the ghost (preview)
-            ghostEntity.setAttribute('visible', false);
-            
-            isFurniturePlaced = true;
-            statusText.innerText = "Furniture Locked. You can move the camera freely.";
-            statusText.style.color = "#00ff00";
-        }
-
-        /**
-         * Helper to create A-Frame text entities.
-         */
-        function createDimensionText(value, x, y, z, color = 'white', scale = 1) {
+        function createDimensionText(value, x, y, z, color = 'white') {
             const textEnt = document.createElement('a-text');
             textEnt.setAttribute('value', value);
             textEnt.setAttribute('align', 'center');
             textEnt.setAttribute('color', color);
             textEnt.setAttribute('position', `${x} ${y} ${z}`);
             textEnt.setAttribute('side', 'double');
-            
-            // Dynamic scaling based on furniture size so text isn't huge/tiny
-            const finalScale = 0.5 * scale; 
-            textEnt.setAttribute('scale', `${finalScale} ${finalScale} ${finalScale}`);
-            
-            // Make text always face camera (billboard effect)
-            // Note: simple look-at logic handled by A-Frame components typically, 
-            // but here we just place it on top.
+            // Scale text relative to object size
+            textEnt.setAttribute('scale', '0.5 0.5 0.5'); 
             return textEnt;
         }
 
-        /**
-         * Resets the scene to scanning mode.
-         */
+        function placeFurnitureInWorld() {
+            if (isFurniturePlaced) return;
+
+            // Capture precise position/rotation from the marker ghost
+            const ghostObject = ghostEntity.object3D;
+            const worldPosition = new THREE.Vector3();
+            const worldQuaternion = new THREE.Quaternion();
+            ghostObject.getWorldPosition(worldPosition);
+            ghostObject.getWorldQuaternion(worldQuaternion);
+
+            placedContainer.innerHTML = ''; // Clear old
+
+            const data = furnitureDatabase[currentSelection];
+            const wrapper = document.createElement('a-entity');
+            
+            // The Furniture Box
+            const box = document.createElement('a-box');
+            box.setAttribute('width', data.width);
+            box.setAttribute('height', data.height);
+            box.setAttribute('depth', data.depth);
+            box.setAttribute('color', data.color);
+            box.setAttribute('position', `0 ${data.height / 2} 0`);
+            
+            // Labels
+            const label = createDimensionText(data.label, 0, data.height + 0.3, 0, 'yellow');
+            const dims = createDimensionText(`${data.width}m x ${data.height}m`, 0, data.height + 0.1, 0, 'white');
+
+            wrapper.appendChild(box);
+            wrapper.appendChild(label);
+            wrapper.appendChild(dims);
+
+            // Apply transforms
+            placedContainer.object3D.position.copy(worldPosition);
+            placedContainer.object3D.quaternion.copy(worldQuaternion);
+            
+            placedContainer.appendChild(wrapper);
+            placedContainer.setAttribute('visible', true);
+            ghostEntity.setAttribute('visible', false);
+            
+            isFurniturePlaced = true;
+            statusText.innerText = "Locked. Move freely.";
+            statusText.style.color = "#4CAF50"; // Green success color
+        }
+
         function resetScene() {
             isFurniturePlaced = false;
             placedContainer.setAttribute('visible', false);
             ghostEntity.setAttribute('visible', true);
-            statusText.innerText = "Scan Hiro Marker to preview";
+            statusText.innerText = "Scan Hiro Marker to Preview";
             statusText.style.color = "yellow";
         }
 
-        /**
-         * Rotates the placed furniture.
-         */
-        function rotatePlacedFurniture() {
+        function rotateFurniture() {
             if (!isFurniturePlaced) return;
-            
             const currentRotation = placedContainer.getAttribute('rotation');
             placedContainer.setAttribute('rotation', {
                 x: currentRotation.x,
@@ -273,33 +268,36 @@
             });
         }
 
-        // --- EVENT LISTENERS ---
+        // --- EVENT BINDING ---
+        // Ensuring elements exist before binding to avoid JS errors (Penalty #11)
+        
+        if(selector) {
+            selector.addEventListener('change', (e) => {
+                currentSelection = e.target.value;
+                updateGhostVisuals();
+                if(isFurniturePlaced) resetScene();
+            });
+        }
 
-        // 1. Dropdown Change
-        selector.addEventListener('change', (e) => {
-            currentSelection = e.target.value;
-            updateGhostVisuals();
-            // If already placed, reset to allow new placement
-            if(isFurniturePlaced) resetScene();
-        });
+        const btnPlace = document.getElementById('btn-place');
+        if(btnPlace) {
+            btnPlace.addEventListener('click', () => {
+                // Check if marker is visible before locking
+                if (markerElement && markerElement.object3D.visible) {
+                    placeFurnitureInWorld();
+                } else {
+                    alert("Marker not detected! Point camera at Hiro marker.");
+                }
+            });
+        }
 
-        // 2. Place Button (The Lock Logic)
-        document.getElementById('btn-place').addEventListener('click', () => {
-            // Check if marker is currently visible before locking
-            if (markerElement.object3D.visible) {
-                placeFurnitureInWorld();
-            } else {
-                alert("Please point at the marker first!");
-            }
-        });
+        const btnReset = document.getElementById('btn-reset');
+        if(btnReset) btnReset.addEventListener('click', resetScene);
 
-        // 3. Reset Button
-        document.getElementById('btn-reset').addEventListener('click', resetScene);
+        const btnRotate = document.getElementById('btn-rotate');
+        if(btnRotate) btnRotate.addEventListener('click', rotateFurniture);
 
-        // 4. Rotate Button
-        document.getElementById('btn-rotate').addEventListener('click', rotatePlacedFurniture);
-
-        // Initialize
+        // Init
         updateGhostVisuals();
 
     </script>
