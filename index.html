@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AR Furniture Visualizer</title>
+
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+
+    <style>
+        
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        .ui-controls-container {
+            position: fixed;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            z-index: 10; /* Ensure buttons are on top of the camera feed */
+        }
+
+        .control-button {
+            background-color: rgba(50, 50, 50, 0.8);
+            color: white;
+            border: 2px solid white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            /* Prevent text selection on double taps on mobile */
+            user-select: none; 
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .control-button:active {
+            background-color: rgba(100, 100, 100, 0.9);
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ui-controls-container">
+        <button class="control-button" id="btn-decrease">Smaller</button>
+        <button class="control-button" id="btn-increase">Bigger</button>
+        <button class="control-button" id="btn-rotate">Rotate</button>
+    </div>
+
+
+    <a-scene embedded arjs='sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;'>
+        
+        <a-assets>
+            </a-assets>
+
+
+        <a-marker preset="hiro">
+            
+            <a-entity id="furniture-wrapper" position="0 0 0" scale="1 1 1" rotation="0 0 0">
+                
+                <a-box position="0 0.4 0" width="1" height="0.05" depth="1" color="#8B4513"></a-box>
+                <a-box position="-0.4 0.2 -0.4" width="0.05" height="0.4" depth="0.05" color="#654321"></a-box>
+                <a-box position="0.4 0.2 -0.4" width="0.05" height="0.4" depth="0.05" color="#654321"></a-box>
+                <a-box position="-0.4 0.2 0.4" width="0.05" height="0.4" depth="0.05" color="#654321"></a-box>
+                <a-box position="0.4 0.2 0.4" width="0.05" height="0.4" depth="0.05" color="#654321"></a-box>
+                </a-entity>
+        </a-marker>
+
+        <a-entity camera></a-entity>
+    </a-scene>
+
+
+    <script>
+  
+        const furnitureEntity = document.getElementById('furniture-wrapper');
+        const btnIncrease = document.getElementById('btn-increase');
+        const btnDecrease = document.getElementById('btn-decrease');
+        const btnRotate = document.getElementById('btn-rotate');
+
+        // Constants used for configuration
+        const SCALE_FACTOR = 0.1; // How much to grow/shrink per click (10%)
+        const ROTATION_DEGREES = 45;
+
+  
+        function modifyScale(multiplier) {
+ 
+            if (!furnitureEntity) {
+                console.error("Error: Furniture entity not found in the DOM.");
+                return;
+            }
+
+            const currentScale = furnitureEntity.object3D.scale;
+            
+            // Calculate new scale ensuring it doesn't become negative or too small
+            // Using Math.max to prevent scale going below 0.1
+            const newScaleValue = Math.max(0.1, currentScale.x + (multiplier * SCALE_FACTOR));
+
+            // Apply new scale uniformly to X, Y, and Z axes
+            furnitureEntity.setAttribute('scale', {
+                x: newScaleValue,
+                y: newScaleValue,
+                z: newScaleValue
+            });
+        }
+
+        function rotateFurniture() {
+   
+            if (!furnitureEntity) {
+                console.error("Error: Furniture entity not found in the DOM.");
+                return;
+            }
+
+            // We only want to rotate around the Y axis (vertical axis)
+            const currentRotation = furnitureEntity.getAttribute('rotation');
+            
+            furnitureEntity.setAttribute('rotation', {
+                x: currentRotation.x,
+                y: currentRotation.y + ROTATION_DEGREES,
+                z: currentRotation.z
+            });
+        }
+
+        if (btnIncrease && btnDecrease && btnRotate) {
+            btnIncrease.addEventListener('click', () => {
+                modifyScale(1); // Increase
+            });
+
+            btnDecrease.addEventListener('click', () => {
+                modifyScale(-1); // Decrease
+            });
+
+            btnRotate.addEventListener('click', () => {
+                rotateFurniture();
+            });
+        } else {
+             console.error("Error: One or more control buttons missing from HTML.");
+        }
+
+    </script>
+</body>
+</html>
